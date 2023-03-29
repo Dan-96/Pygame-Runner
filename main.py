@@ -24,9 +24,6 @@ ground_surf = pygame.image.load('Graphics/Ground.png').convert()
 ground_rect = ground_surf.get_rect()
 
 
-# score_surf = font.render('0', False, 'black')
-# score_rect = score_surf.get_rect(center = (400, 50))
-
 enemy_surf = pygame.image.load('Graphics/Enemy_golf.png').convert_alpha()
 enemy_rect = enemy_surf.get_rect(topleft = (800, 245))
 
