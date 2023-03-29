@@ -19,15 +19,14 @@ font = pygame.font.Font('Fonts/MP16REG.ttf', 50)
 game_active = True
 start_time = 0
 
-background_surf = pygame.image.load('Graphics/Background.png').convert()
+background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background.png').convert()), (800, 400))
 ground_surf = pygame.image.load('Graphics/Ground.png').convert()
 ground_rect = ground_surf.get_rect()
 
+enemy_surf = pygame.image.load('Graphics/Enemy_boulder.png').convert_alpha()
+enemy_rect = enemy_surf.get_rect(midbottom = (800, 300))
 
-enemy_surf = pygame.image.load('Graphics/Enemy_golf.png').convert_alpha()
-enemy_rect = enemy_surf.get_rect(topleft = (800, 245))
-
-player_surf = pygame.image.load('Graphics/Player_Idle.png')
+player_surf = pygame.image.load('Graphics/Player_idle.png')
 player_rect = player_surf.get_rect(midbottom = (50, 300))
 player_gravity = 0
 
