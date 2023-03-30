@@ -15,7 +15,7 @@ def obstacle_movement(obstacle_list):
     if obstacle_list:
         for obstacle_rect in obstacle_list:
             obstacle_rect.left -= 8
-            if obstacle_rect.midbottom == 300:
+            if obstacle_rect.bottom == 300:
                 screen.blit(boulder_surf, obstacle_rect)
             else:
                 screen.blit(bird_surf, obstacle_rect)
@@ -23,6 +23,14 @@ def obstacle_movement(obstacle_list):
         return obstacle_list
     else:
         return []
+
+
+def collisions(player, obstacles):
+    if obstacles:
+        for obstacle_rect in obstacles:
+            if player.colliderect(obstacle_rect):
+                return False
+    return True
 
 
 pygame.init()
@@ -103,15 +111,12 @@ while True:
         print(len(obstacle_rect_list))
 
         # Collisions with enemy
-        # if player_rect.colliderect(boulder_rect):
-        #     if player_rect.collidepoint(boulder_rect.topleft) or \
-        #             player_rect.collidepoint(boulder_rect.topright) or \
-        #             player_rect.collidepoint(boulder_rect.bottomleft) or \
-        #             player_rect.collidepoint(boulder_rect.bottomright):
-        #         boulder_rect.left = 800
-        #         game_active = False
+        game_active = collisions(player_rect, obstacle_rect_list)
 
     else:
+        obstacle_rect_list.clear()
+        player_rect.midbottom = (50, 300)
+        player_gravity = 0
         score_surf2 = font.render('PRESS SPACE BAR TO RESTART', False, 'white')
         score_rect2 = score_surf2.get_rect(center=(400, 200))
         score_message = font.render(f'score: {score}', False, 'white')
