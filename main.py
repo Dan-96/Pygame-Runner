@@ -1,5 +1,6 @@
 import pygame
 from sys import exit
+from random import randint
 
 
 def display_score():
@@ -8,6 +9,17 @@ def display_score():
     score_rect = score_surf.get_rect(center = (400, 50))
     screen.blit(score_surf, score_rect)
     return current_time
+
+
+def obstacle_movement(obstacle_list):
+    if obstacle_list:
+        for obstacle_rect in obstacle_list:
+            obstacle_rect.left -= 1
+            screen.blit(enemy_surf, obstacle_rect)
+        obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.left > -200]
+        return obstacle_list
+    else:
+        return []
 
 
 pygame.init()
@@ -23,12 +35,20 @@ background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background
 ground_surf = pygame.image.load('Graphics/Ground.png').convert()
 ground_rect = ground_surf.get_rect()
 
+# Obstacles
 enemy_surf = pygame.image.load('Graphics/Enemy_boulder.png').convert_alpha()
 enemy_rect = enemy_surf.get_rect(midbottom = (800, 300))
+
+# Obstacle list
+obstacle_rect_list = []
 
 player_surf = pygame.image.load('Graphics/Player_idle.png')
 player_rect = player_surf.get_rect(midbottom = (50, 300))
 player_gravity = 0
+
+# Timer
+obstacle_timer = pygame.USEREVENT + 1
+pygame.time.set_timer(obstacle_timer, 1500)
 
 mouse_pos = pygame.mouse.get_pos()
 
@@ -38,6 +58,8 @@ while True:
             pygame.quit()
             exit()
         if game_active:
+            if event.type == obstacle_timer:
+                obstacle_rect_list.append(enemy_surf.get_rect(midbottom = (randint(900, 1100), 300)))
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if player_rect.bottom >= 300:
@@ -56,17 +78,25 @@ while True:
         screen.blit(background_surf, (0, 0))
         screen.blit(ground_surf, (0, 300))
         score = display_score()
-        enemy_rect.left -= 15
-        if enemy_rect.left < -200:
-            enemy_rect.left = 800
-        screen.blit(enemy_surf, enemy_rect)
-        # player
+
+        # Enemies
+        # enemy_rect.left -= 15
+        # if enemy_rect.left < -200:
+        #     enemy_rect.left = 800
+        # screen.blit(enemy_surf, enemy_rect)
+
+        # Player
         player_gravity += 1
         if player_rect.bottom >= 300:
             player_rect.bottom = 300
         screen.blit(player_surf, player_rect)
         player_rect.top += player_gravity
-        # collisions with enemy
+
+        # Obstacle movement
+        obstacle_rect_list = obstacle_movement(obstacle_rect_list)
+        print(len(obstacle_rect_list))
+
+        # Collisions with enemy
         if player_rect.colliderect(enemy_rect):
             if player_rect.collidepoint(enemy_rect.topleft) or \
                     player_rect.collidepoint(enemy_rect.topright) or \
