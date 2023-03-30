@@ -14,8 +14,11 @@ def display_score():
 def obstacle_movement(obstacle_list):
     if obstacle_list:
         for obstacle_rect in obstacle_list:
-            obstacle_rect.left -= 1
-            screen.blit(enemy_surf, obstacle_rect)
+            obstacle_rect.left -= 8
+            if obstacle_rect.midbottom == 300:
+                screen.blit(boulder_surf, obstacle_rect)
+            else:
+                screen.blit(bird_surf, obstacle_rect)
         obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.left > -200]
         return obstacle_list
     else:
@@ -36,8 +39,8 @@ ground_surf = pygame.image.load('Graphics/Ground.png').convert()
 ground_rect = ground_surf.get_rect()
 
 # Obstacles
-enemy_surf = pygame.image.load('Graphics/Enemy_boulder.png').convert_alpha()
-enemy_rect = enemy_surf.get_rect(midbottom = (800, 300))
+boulder_surf = pygame.image.load('Graphics/Enemy_boulder.png').convert_alpha()
+bird_surf = pygame.image.load('Graphics/Enemy_bird.png').convert_alpha()
 
 # Obstacle list
 obstacle_rect_list = []
@@ -59,7 +62,10 @@ while True:
             exit()
         if game_active:
             if event.type == obstacle_timer:
-                obstacle_rect_list.append(enemy_surf.get_rect(midbottom = (randint(900, 1100), 300)))
+                if randint(0, 2):
+                    obstacle_rect_list.append(boulder_surf.get_rect(midbottom = (randint(900, 1100), 300)))
+                else:
+                    obstacle_rect_list.append(bird_surf.get_rect(midbottom=(randint(900, 1100), 100)))
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if player_rect.bottom >= 300:
@@ -97,13 +103,13 @@ while True:
         print(len(obstacle_rect_list))
 
         # Collisions with enemy
-        if player_rect.colliderect(enemy_rect):
-            if player_rect.collidepoint(enemy_rect.topleft) or \
-                    player_rect.collidepoint(enemy_rect.topright) or \
-                    player_rect.collidepoint(enemy_rect.bottomleft) or \
-                    player_rect.collidepoint(enemy_rect.bottomright):
-                enemy_rect.left = 800
-                game_active = False
+        # if player_rect.colliderect(boulder_rect):
+        #     if player_rect.collidepoint(boulder_rect.topleft) or \
+        #             player_rect.collidepoint(boulder_rect.topright) or \
+        #             player_rect.collidepoint(boulder_rect.bottomleft) or \
+        #             player_rect.collidepoint(boulder_rect.bottomright):
+        #         boulder_rect.left = 800
+        #         game_active = False
 
     else:
         score_surf2 = font.render('PRESS SPACE BAR TO RESTART', False, 'white')
