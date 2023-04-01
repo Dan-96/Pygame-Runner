@@ -3,6 +3,13 @@ from sys import exit
 from random import randint
 
 
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load('Graphics/Player_run_1.png').convert_alpha()
+        self.rect = self.image.get_rect(midbottom = (200, 300))
+
+
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 100))
     score_surf = font.render(f'{current_time}', True, 'black')
@@ -54,6 +61,8 @@ clock = pygame.time.Clock()
 font = pygame.font.Font('Fonts/MP16REG.ttf', 50)
 game_active = True
 start_time = 0
+player = pygame.sprite.GroupSingle()
+player.add(Player())
 
 # Background and ground
 background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background.png').convert()), (800, 400))
@@ -76,9 +85,6 @@ bird_surf = bird_frames[int(bird_frame_index)]
 
 # Obstacle list
 obstacle_rect_list = []
-
-# Player idle
-player_idle = pygame.image.load('Graphics/Player_idle.png').convert_alpha()
 
 # Player walk
 player_run_1 = pygame.image.load('Graphics/Player_run_1.png').convert_alpha()
@@ -109,7 +115,7 @@ player_jump = pygame.image.load('Graphics/Player_jump.png').convert_alpha()
 player_index = 0
 
 player_surf = player_run[player_index]
-player_rect = player_idle.get_rect(midbottom = (50, 300))
+player_rect = player_surf.get_rect(midbottom = (50, 300))
 player_gravity = 0
 
 # Timer
@@ -117,7 +123,7 @@ obstacle_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, 700)
 
 bird_animation_timer = pygame.USEREVENT + 2
-pygame.time.set_timer(bird_animation_timer, 200)
+pygame.time.set_timer(bird_animation_timer, 100)
 
 boulder_animation_timer = pygame.USEREVENT + 3
 pygame.time.set_timer(boulder_animation_timer, 100)
@@ -151,12 +157,12 @@ while True:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if player_rect.bottom >= 300:
-                        player_gravity = -20
+                        player_gravity = -16
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player_rect.collidepoint(event.pos):
                     if player_rect.bottom >= 300:
-                        player_gravity = -20
+                        player_gravity = -16
 
         else:
             if event.type == pygame.KEYDOWN:
@@ -174,6 +180,7 @@ while True:
         if player_rect.bottom >= 300:
             player_rect.bottom = 300
         player_animations()
+        player.draw(screen)
         screen.blit(player_surf, player_rect)
         player_rect.top += player_gravity
 
