@@ -14,7 +14,7 @@ def display_score():
 def obstacle_movement(obstacle_list):
     if obstacle_list:
         for obstacle_rect in obstacle_list:
-            obstacle_rect.left -= 8
+            obstacle_rect.left -= 15
             if obstacle_rect.bottom == 300:
                 screen.blit(boulder_surf, obstacle_rect)
             else:
@@ -33,6 +33,19 @@ def collisions(player, obstacles):
     return True
 
 
+def player_animations():
+    global player_surf, player_index
+    if player_rect.bottom < 300:
+        # Jumping animation
+        player_surf = player_jump
+    else:
+        # Walking animation
+        player_index += 0.3
+        if player_index >= len(player_run):
+            player_index = 0
+        player_surf = player_run[int(player_index)]
+
+
 pygame.init()
 screen = pygame.display.set_mode((800, 400))
 pygame.display.set_caption('Runner')
@@ -42,26 +55,72 @@ font = pygame.font.Font('Fonts/MP16REG.ttf', 50)
 game_active = True
 start_time = 0
 
+# Background and ground
 background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background.png').convert()), (800, 400))
 ground_surf = pygame.image.load('Graphics/Ground.png').convert()
 ground_rect = ground_surf.get_rect()
 
-# Obstacles
-boulder_surf = pygame.image.load('Graphics/Enemy_boulder.png').convert_alpha()
-bird_surf = pygame.image.load('Graphics/Enemy_bird.png').convert_alpha()
+# Boulder obstacle
+boulder_frame_1 = pygame.image.load('Graphics/Enemy_boulder_1.png').convert_alpha()
+boulder_frame_2 = pygame.image.load('Graphics/Enemy_boulder_2.png').convert_alpha()
+boulder_frames = [boulder_frame_1, boulder_frame_2]
+boulder_frame_index = 0
+boulder_surf = boulder_frames[int(boulder_frame_index)]
+
+# Bird obstacle
+bird_frame_1 = pygame.image.load('Graphics/Enemy_bird_1.png').convert_alpha()
+bird_frame_2 = pygame.image.load('Graphics/Enemy_bird_2.png').convert_alpha()
+bird_frames = [bird_frame_1, bird_frame_2]
+bird_frame_index = 0
+bird_surf = bird_frames[int(bird_frame_index)]
 
 # Obstacle list
 obstacle_rect_list = []
 
-player_surf = pygame.image.load('Graphics/Player_idle.png')
-player_rect = player_surf.get_rect(midbottom = (50, 300))
+# Player idle
+player_idle = pygame.image.load('Graphics/Player_idle.png').convert_alpha()
+
+# Player walk
+player_run_1 = pygame.image.load('Graphics/Player_run_1.png').convert_alpha()
+player_run_2 = pygame.image.load('Graphics/Player_run_2.png').convert_alpha()
+player_run_3 = pygame.image.load('Graphics/Player_run_3.png').convert_alpha()
+player_run_4 = pygame.image.load('Graphics/Player_run_4.png').convert_alpha()
+player_run_5 = pygame.image.load('Graphics/Player_run_5.png').convert_alpha()
+player_run_6 = pygame.image.load('Graphics/Player_run_6.png').convert_alpha()
+player_run_7 = pygame.image.load('Graphics/Player_run_7.png').convert_alpha()
+player_run_8 = pygame.image.load('Graphics/Player_run_8.png').convert_alpha()
+player_run_9 = pygame.image.load('Graphics/Player_run_9.png').convert_alpha()
+
+player_run = [
+    player_run_1,
+    player_run_2,
+    player_run_3,
+    player_run_4,
+    player_run_5,
+    player_run_6,
+    player_run_7,
+    player_run_8,
+    player_run_9,
+]
+
+# Player jump
+player_jump = pygame.image.load('Graphics/Player_jump.png').convert_alpha()
+
+player_index = 0
+
+player_surf = player_run[player_index]
+player_rect = player_idle.get_rect(midbottom = (50, 300))
 player_gravity = 0
 
 # Timer
 obstacle_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(obstacle_timer, 1500)
+pygame.time.set_timer(obstacle_timer, 700)
 
-mouse_pos = pygame.mouse.get_pos()
+bird_animation_timer = pygame.USEREVENT + 2
+pygame.time.set_timer(bird_animation_timer, 200)
+
+boulder_animation_timer = pygame.USEREVENT + 3
+pygame.time.set_timer(boulder_animation_timer, 100)
 
 while True:
     for event in pygame.event.get():
@@ -71,17 +130,34 @@ while True:
         if game_active:
             if event.type == obstacle_timer:
                 if randint(0, 2):
-                    obstacle_rect_list.append(boulder_surf.get_rect(midbottom = (randint(900, 1100), 300)))
+                    obstacle_rect_list.append(boulder_frame_1.get_rect(midbottom = (randint(900, 1100), 300)))
                 else:
-                    obstacle_rect_list.append(bird_surf.get_rect(midbottom=(randint(900, 1100), 100)))
+                    obstacle_rect_list.append(bird_frame_1.get_rect(midbottom=(randint(900, 1100), 150)))
+
+            if event.type == boulder_animation_timer:
+                if boulder_frame_index == 0:
+                    boulder_frame_index = 1
+                else:
+                    boulder_frame_index = 0
+                boulder_surf = boulder_frames[boulder_frame_index]
+
+            if event.type == bird_animation_timer:
+                if bird_frame_index == 0:
+                    bird_frame_index = 1
+                else:
+                    bird_frame_index = 0
+                bird_surf = bird_frames[bird_frame_index]
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if player_rect.bottom >= 300:
                         player_gravity = -20
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player_rect.collidepoint(event.pos):
                     if player_rect.bottom >= 300:
                         player_gravity = -20
+
         else:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
@@ -93,22 +169,16 @@ while True:
         screen.blit(ground_surf, (0, 300))
         score = display_score()
 
-        # Enemies
-        # enemy_rect.left -= 15
-        # if enemy_rect.left < -200:
-        #     enemy_rect.left = 800
-        # screen.blit(enemy_surf, enemy_rect)
-
         # Player
         player_gravity += 1
         if player_rect.bottom >= 300:
             player_rect.bottom = 300
+        player_animations()
         screen.blit(player_surf, player_rect)
         player_rect.top += player_gravity
 
         # Obstacle movement
         obstacle_rect_list = obstacle_movement(obstacle_rect_list)
-        print(len(obstacle_rect_list))
 
         # Collisions with enemy
         game_active = collisions(player_rect, obstacle_rect_list)
