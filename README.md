@@ -1,2 +1,2 @@
 # Pygame-Runner
-My first python game using pygame.
+My first python project of an infinte runner game made using pygame.
