@@ -90,9 +90,8 @@ class Obstacle(pygame.sprite.Sprite):
 
     def update(self):
         self.animation_state()
-        self.rect.x -= 15
+        self.rect.x -= speed
         self.destroy()
-
 
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 100))
@@ -116,7 +115,7 @@ clock = pygame.time.Clock()
 font = pygame.font.Font('Fonts/MP16REG.ttf', 50)
 game_active = True
 start_time = 0
-
+speed = 10
 player_group = pygame.sprite.GroupSingle()
 player_group.add(Player())
 
@@ -125,7 +124,10 @@ obstacle_group = pygame.sprite.Group()
 # Background and ground
 background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background.png').convert()), (800, 400))
 ground_surf = pygame.image.load('Graphics/Ground.png').convert()
-ground_rect = ground_surf.get_rect()
+ground_rect = ground_surf.get_rect(top = 300)
+ground_img_width = ground_surf.get_width()
+ground_x1 = 0
+ground_x2 = ground_img_width
 
 # Boulder obstacle
 boulder_frame_1 = pygame.image.load('Graphics/Enemy_boulder_1.png').convert_alpha()
@@ -141,7 +143,7 @@ bird_frames = [bird_frame_1, bird_frame_2]
 bird_frame_index = 0
 bird_surf = bird_frames[int(bird_frame_index)]
 
-# Timer
+# Timers
 obstacle_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, 700)
 
@@ -151,6 +153,9 @@ pygame.time.set_timer(bird_animation_timer, 100)
 boulder_animation_timer = pygame.USEREVENT + 3
 pygame.time.set_timer(boulder_animation_timer, 100)
 
+obstacle_speed = pygame.USEREVENT + 4
+pygame.time.set_timer(obstacle_speed, 50)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -158,7 +163,7 @@ while True:
             exit()
         if game_active:
             if event.type == obstacle_timer:
-                obstacle_group.add(Obstacle(choice(['bird', 'boulder', 'boulder', 'boulder'])))
+                obstacle_group.add(Obstacle(choice(['bird', 'boulder', 'boulder'])))
 
             if event.type == boulder_animation_timer:
                 if boulder_frame_index == 0:
@@ -174,6 +179,9 @@ while True:
                     bird_frame_index = 0
                 bird_surf = bird_frames[bird_frame_index]
 
+            if event.type == obstacle_speed:
+                speed += 0.01
+
         else:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
@@ -181,9 +189,19 @@ while True:
                     game_active = True
 
     if game_active:
+        # Background
         screen.blit(background_surf, (0, 0))
-        screen.blit(ground_surf, (0, 300))
+        ground_x1 -= speed
+        ground_x2 -= speed
+        if ground_x1 < -ground_img_width:
+            ground_x1 = ground_x2 + ground_img_width
+        if ground_x2 < -ground_img_width:
+            ground_x2 = ground_x1 + ground_img_width
+        screen.blit(ground_surf, (ground_x1, 300))
+        screen.blit(ground_surf, (ground_x2, 300))
         score = display_score()
+        print(ground_x1)
+        print(ground_x2)
 
         # Player
         player_group.update()
@@ -194,6 +212,7 @@ while True:
 
 
     else:
+        speed = 10
         player_gravity = 0
         score_surf2 = font.render('PRESS SPACE BAR TO RESTART', False, 'white')
         score_rect2 = score_surf2.get_rect(center=(400, 200))
