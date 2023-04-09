@@ -31,12 +31,14 @@ class Player(pygame.sprite.Sprite):
 
         self.image = pygame.image.load('Graphics/Player_run_1.png').convert_alpha()
         self.rect = self.image.get_rect(midbottom = (80, 300))
+        self.rect.width = self.image.get_width() // 2
         self.gravity = 0
 
     def player_input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and self.rect.bottom >= 300:
-            self.gravity = -15
+            if display_score() > 10:
+                self.gravity = -15
 
     def apply_gravity(self):
         self.gravity += 1
@@ -107,6 +109,18 @@ def sprite_collisions():
     else:
         return True
 
+def scroll_background(bg_x, bg_x2, surface, height, img_width, scroll_speed):
+    bg_x -= speed / scroll_speed
+    bg_x2 -= speed / scroll_speed
+    if bg_x < -img_width:
+        bg_x = bg_x2 + img_width
+    if bg_x2 < -img_width:
+        bg_x2 = bg_x + img_width
+    screen.blit(surface, (bg_x, height))
+    screen.blit(surface, (bg_x2, height))
+    return bg_x, bg_x2
+
+
 pygame.init()
 screen = pygame.display.set_mode((800, 400))
 pygame.display.set_caption('Runner')
@@ -123,11 +137,26 @@ obstacle_group = pygame.sprite.Group()
 
 # Background and ground
 background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background.png').convert()), (800, 400))
+
 ground_surf = pygame.image.load('Graphics/Ground.png').convert()
-ground_rect = ground_surf.get_rect(top = 300)
 ground_img_width = ground_surf.get_width()
 ground_x1 = 0
 ground_x2 = ground_img_width
+
+city_surf = pygame.transform.scale((pygame.image.load('Graphics/City_background_1.png').convert_alpha()), (800, 400))
+city_img_width = city_surf.get_width()
+city_x1 = 0
+city_x2 = city_img_width
+
+city2_surf = pygame.transform.scale((pygame.image.load('Graphics/City_background_2.png').convert_alpha()), (800, 400))
+city2_img_width = city2_surf.get_width()
+city2_x1 = 0
+city2_x2 = city2_img_width
+
+city3_surf = pygame.transform.scale((pygame.image.load('Graphics/City_background_3.png').convert_alpha()), (800, 400))
+city3_img_width = city3_surf.get_width()
+city3_x1 = 0
+city3_x2 = city3_img_width
 
 # Boulder obstacle
 boulder_frame_1 = pygame.image.load('Graphics/Enemy_boulder_1.png').convert_alpha()
@@ -191,17 +220,11 @@ while True:
     if game_active:
         # Background
         screen.blit(background_surf, (0, 0))
-        ground_x1 -= speed
-        ground_x2 -= speed
-        if ground_x1 < -ground_img_width:
-            ground_x1 = ground_x2 + ground_img_width
-        if ground_x2 < -ground_img_width:
-            ground_x2 = ground_x1 + ground_img_width
-        screen.blit(ground_surf, (ground_x1, 300))
-        screen.blit(ground_surf, (ground_x2, 300))
+        city3_x1, city3_x2 = scroll_background(city3_x1, city3_x2, city3_surf, 0, city3_img_width, 3000)
+        city2_x1, city2_x2 = scroll_background(city2_x1, city2_x2, city2_surf, 0, city2_img_width, 800)
+        city_x1, city_x2 = scroll_background(city_x1, city_x2, city_surf, 0, city_img_width, 100)
+        ground_x1, ground_x2 = scroll_background(ground_x1, ground_x2, ground_surf, 300, ground_img_width, 1.5)
         score = display_score()
-        print(ground_x1)
-        print(ground_x2)
 
         # Player
         player_group.update()
@@ -213,7 +236,6 @@ while True:
 
     else:
         speed = 10
-        player_gravity = 0
         score_surf2 = font.render('PRESS SPACE BAR TO RESTART', False, 'white')
         score_rect2 = score_surf2.get_rect(center=(400, 200))
         score_message = font.render(f'score: {score}', False, 'white')
