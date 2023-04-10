@@ -135,14 +135,16 @@ player_group.add(Player())
 
 obstacle_group = pygame.sprite.Group()
 
-# Background and ground
+# Background colour
 background_surf = pygame.transform.scale((pygame.image.load('Graphics/Background.png').convert()), (800, 400))
 
+# Ground
 ground_surf = pygame.image.load('Graphics/Ground.png').convert()
 ground_img_width = ground_surf.get_width()
 ground_x1 = 0
 ground_x2 = ground_img_width
 
+# Background city
 city_surf = pygame.transform.scale((pygame.image.load('Graphics/City_background_1.png').convert_alpha()), (800, 400))
 city_img_width = city_surf.get_width()
 city_x1 = 0
@@ -209,7 +211,7 @@ while True:
                 bird_surf = bird_frames[bird_frame_index]
 
             if event.type == obstacle_speed:
-                speed += 0.01
+                speed += 0.01 # default: 0.01
 
         else:
             if event.type == pygame.KEYDOWN:
@@ -232,7 +234,6 @@ while True:
         obstacle_group.draw(screen)
         obstacle_group.update()
         game_active = sprite_collisions()
-
 
     else:
         speed = 10
