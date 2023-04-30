@@ -1,44 +1,28 @@
 import random
+import time
 
 import pygame
+
+from time import sleep
+
 from sys import exit
+
 from random import randint, choice
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        player_run_1 = pygame.image.load('Graphics/Player_run_1.png').convert_alpha()
-        player_run_2 = pygame.image.load('Graphics/Player_run_2.png').convert_alpha()
-        player_run_3 = pygame.image.load('Graphics/Player_run_3.png').convert_alpha()
-        player_run_4 = pygame.image.load('Graphics/Player_run_4.png').convert_alpha()
-        player_run_5 = pygame.image.load('Graphics/Player_run_5.png').convert_alpha()
-        player_run_6 = pygame.image.load('Graphics/Player_run_6.png').convert_alpha()
-        player_run_7 = pygame.image.load('Graphics/Player_run_7.png').convert_alpha()
-        player_run_8 = pygame.image.load('Graphics/Player_run_8.png').convert_alpha()
-        player_run_9 = pygame.image.load('Graphics/Player_run_9.png').convert_alpha()
-        self.player_run = [
-            player_run_1,
-            player_run_2,
-            player_run_3,
-            player_run_4,
-            player_run_5,
-            player_run_6,
-            player_run_7,
-            player_run_8,
-            player_run_9,
-        ]
         self.animation_index = 0
         self.player_jump = pygame.image.load('Graphics/Player_jump.png').convert_alpha()
-
-        self.image = player_run_1
+        self.image = import_frames('Player_run_', 10)[0]
         self.rect = self.image.get_rect(midbottom = (80, 300))
         self.rect.width = self.image.get_width() // 2
-        self.gravity = 0
+        self.gravity = 2
 
     def player_input(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE] and self.rect.bottom >= 300:
+        if keys[pygame.K_UP] and self.rect.bottom >= 300:
             if display_score() > 5:
                 self.gravity = -15
 
@@ -51,11 +35,13 @@ class Player(pygame.sprite.Sprite):
     def animation_state(self):
         if self.rect.bottom < 300:
             self.image = self.player_jump
+
         else:
             self.animation_index += speed / 50 # default: 50
-            if self.animation_index >= len(self.player_run):
+            if self.animation_index >= len(import_frames('Player_run_', 10)):
                 self.animation_index = 0
-            self.image = self.player_run[int(self.animation_index)]
+
+            self.image = import_frames('Player_run_', 10)[int(self.animation_index)]
 
     def update(self):
         self.player_input()
@@ -67,23 +53,24 @@ class Obstacle(pygame.sprite.Sprite):
     def __init__(self, type):
         super().__init__()
         if type == 'bird':
-            bird_frame_1 = pygame.image.load('Graphics/Enemy_bird_1.png').convert_alpha()
-            bird_frame_2 = pygame.image.load('Graphics/Enemy_bird_2.png').convert_alpha()
-            self.frames = [bird_frame_1, bird_frame_2]
-            y_pos = 160
+            self.frames = import_frames('Enemy_bird_', 3)
+            self.y_pos = 160
+
         else:
-            boulder_frame_1 = pygame.image.load('Graphics/Enemy_boulder_1.png').convert_alpha()
-            boulder_frame_2 = pygame.image.load('Graphics/Enemy_boulder_2.png').convert_alpha()
-            self.frames = [boulder_frame_1, boulder_frame_2]
-            y_pos = 300
+            self.frames = import_frames('Enemy_boulder_', 3)
+            self.y_pos = 300
 
         self.animation_index = 0
         self.image = self.frames[self.animation_index]
-        self.rect = self.image.get_rect(midbottom = (randint(900, 1100), y_pos))
+        self.rect = self.image.get_rect(midbottom = (randint(900, 1100), self.y_pos))
+        self.rect.width = self.image.get_width() // 10
+        self.rect.height = self.image.get_height() // 10
+
     def animation_state(self):
         self.animation_index += 0.1
         if self.animation_index >= len(self.frames):
             self.animation_index = 0
+
         self.image = self.frames[int(self.animation_index)]
 
     def destroy(self):
@@ -95,40 +82,34 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.x -= speed
         self.destroy()
 
+
 class Coin(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        coin_frame_1 = image_scaling('Graphics/Coin_1.png', 45, 45)
-        coin_frame_2 = image_scaling('Graphics/Coin_2.png', 45, 45)
-        coin_frame_3 = image_scaling('Graphics/Coin_3.png', 45, 45)
-        coin_frame_4 = image_scaling('Graphics/Coin_2.png', 45, 45)
-        self.coin_frame = [
-            coin_frame_1,
-            coin_frame_2,
-            coin_frame_3,
-            coin_frame_4
-        ]
-
+        self.coin_spin = import_frames('Coin_', 5, True, 40, 40)
         self.animation_index = 0
-        self.image = coin_frame_1
+        self.image = self.coin_spin[0]
         y_pos = [280, 280, 160]
         self.rect = self.image.get_rect(midbottom = (randint(900, 1700), choice(y_pos)))
 
     def animation_state(self):
         self.animation_index += 0.2
-        if self.animation_index >= len(self.coin_frame):
+        if self.animation_index >= len(self.coin_spin):
             self.animation_index = 0
-        self.image = self.coin_frame[int(self.animation_index)]
+
+        self.image = self.coin_spin[int(self.animation_index)]
 
     def destroy(self):
         if self.rect.x < -200:
             self.kill()
             return True
-        if not player_collisions(coin_group, False):
+
+        if player_collisions(coin_group, False):
             self.kill()
             global money
             money += 1
             return True
+
         else:
             return False
 
@@ -137,9 +118,10 @@ class Coin(pygame.sprite.Sprite):
         self.rect.x -= speed / 1.5
         self.destroy()
 
+
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 100))
-    score_surf = font.render(f'{current_time}', True, 'black')
+    score_surf = font.render(f'{current_time}', False, 'black')
     score_rect = score_surf.get_rect(midleft = (10, 20))
     screen.blit(score_surf, score_rect)
     return current_time
@@ -148,17 +130,21 @@ def player_collisions(group, empty):
     if pygame.sprite.spritecollide(player_group.sprite, group, False):
         if empty:
             group.empty()
-        return False
-    else:
+
         return True
+
+    else:
+        return False
 
 def scroll_background(bg_x, bg_x2, surface, height, img_width, scroll_speed):
     bg_x -= speed / scroll_speed
     bg_x2 -= speed / scroll_speed
     if bg_x < -img_width:
         bg_x = bg_x2 + img_width
+
     if bg_x2 < -img_width:
         bg_x2 = bg_x + img_width
+
     screen.blit(surface, (bg_x, height))
     screen.blit(surface, (bg_x2, height))
     return bg_x, bg_x2
@@ -166,44 +152,61 @@ def scroll_background(bg_x, bg_x2, surface, height, img_width, scroll_speed):
 def image_scaling(image, x, y):
     return pygame.transform.scale(pygame.image.load(image).convert_alpha(), (x, y))
 
-def menu_selection(pos):
+def menu_selection(y_pos, x_pos = 300):
     selection_surf = pygame.image.load('Graphics/Selection.png').convert_alpha()
-    selection_rect = selection_surf.get_rect(topleft = (300, pos))
+    selection_rect = selection_surf.get_rect(topleft = (x_pos, y_pos))
     screen.blit(selection_surf, selection_rect)
 
 def text_render(text, color, x, y, anchor = 'center'):
+    if menu_position == y - 25:
+        color = 'white'
+
     surf = font.render(text, False, color)
     rect = surf.get_rect()
-    if anchor == 'center':
-        rect.center = (x, y)
-    elif anchor == 'topleft':
-        rect.topleft = (x, y)
-    elif anchor == 'topright':
-        rect.topright = (x, y)
-    elif anchor == 'bottomleft':
-        rect.bottomleft = (x, y)
-    elif anchor == 'bottomright':
-        rect.bottomright = (x, y)
-    elif anchor == 'midleft':
-        rect.midleft = (x, y)
-    elif anchor == 'midright':
-        rect.midright = (x, y)
-    elif anchor == 'midtop':
-        rect.midtop = (x, y)
-    elif anchor == 'midbottom':
-        rect.midbottom = (x, y)
+    setattr(rect, anchor, (x, y))
     screen.blit(surf, rect)
+    return surf
 
+def import_frames(image, number_of_frames, scaling = False, x = None, y = None):
+    img_list = []
+    for i in range(1, number_of_frames):
+        img_path = f'Graphics/{image}{i}.png'
+        if scaling:
+            img = image_scaling(img_path, x, y).convert_alpha()
+        else:
+            img = pygame.image.load(img_path).convert_alpha()
+        img_list.append(img)
+
+    return img_list
+
+def timer(number, milliseconds):
+    time = pygame.USEREVENT + number
+    pygame.time.set_timer(time, milliseconds)
+    return time
+
+def blur(amount):
+    overlay = pygame.Surface((800, 400))
+    overlay.set_alpha(amount)
+    # overlay.fill('black')
+    screen.blit(overlay, (0, 0))
+
+# Main
 pygame.init()
-screen = pygame.display.set_mode((800, 400))
-pygame.display.set_caption('Runner')
+WIDTH = 800
+HEIGHT = 400
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption('Pygame Runner')
 pygame.display.set_icon(pygame.image.load('Graphics/Logo.png'))
 clock = pygame.time.Clock()
 font = pygame.font.Font('Fonts/MP16REG.ttf', 30)
-coin_spawn_random = 0
 game_active = False
 options_menu = False
-menu_selection_pos = 75
+credits_menu = False
+credits_x, credits_y = 245, 12
+random_speed_x = random.uniform(0.05, 0.2)
+random_speed_y = random.uniform(0.05, 0.2)
+credits_color = (randint(1, 255), randint(1, 255), randint(1, 255))
+menu_position = 125
 start_time = 0
 speed = 10
 money = 0
@@ -245,20 +248,12 @@ city3_x1 = 0
 city3_x2 = city3_img_width
 
 # Timers
-obstacle_spawn_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(obstacle_spawn_timer, 700)
-
-bird_animation_timer = pygame.USEREVENT + 2
-pygame.time.set_timer(bird_animation_timer, 100)
-
-boulder_animation_timer = pygame.USEREVENT + 3
-pygame.time.set_timer(boulder_animation_timer, 100)
-
-coin_spawn_timer = pygame.USEREVENT + 4
-pygame.time.set_timer(coin_spawn_timer, 1500)
-
-obstacle_speed = pygame.USEREVENT + 5
-pygame.time.set_timer(obstacle_speed, 50)
+obstacle_spawn_timer = timer(1, 700)
+bird_animation_timer = timer(2, 100)
+boulder_animation_timer = timer(3, 100)
+coin_spawn_timer = timer(4, 1500)
+obstacle_speed = timer(5, 50)
+credits_scroll_timer = timer(6, 1)
 
 while True:
     for event in pygame.event.get():
@@ -267,51 +262,100 @@ while True:
             exit()
 
         if game_active:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    game_active = False
+
             if event.type == obstacle_spawn_timer:
                 obstacle_group.add(Obstacle(choice(['bird', 'boulder', 'boulder'])))
+
             if event.type == coin_spawn_timer:
-                coin_group.add(Coin())
+                if score > 100:
+                    coin_group.add(Coin())
+
             if event.type == obstacle_speed:
                 speed += 0.01 # default: 0.01
+                if speed >= 35:
+                    speed = 35
+                print(speed)
 
         elif options_menu:
-            menu_selection_pos = 175
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
-                    if menu_selection_pos == 175:
+                    if menu_position == 175:
                         options_menu = False
-                        menu_selection_pos = 75
+                        menu_position = 125
+
+                if event.key == pygame.K_ESCAPE:
+                    options_menu = False
+                    menu_position = 75
+
                 if event.key == pygame.K_DOWN:
-                    menu_selection_pos += 50
-                    if menu_selection_pos >= 175:
-                        menu_selection_pos = 175
-                    print(menu_selection_pos)
+                    menu_position += 50
+                    if menu_position >= 175:
+                        menu_position = 175
+
                 if event.key == pygame.K_UP:
-                    menu_selection_pos -= 50
-                    if menu_selection_pos <= 175:
-                        menu_selection_pos = 175
-                    print(menu_selection_pos)
+                    menu_position -= 50
+                    if menu_position <= 175:
+                        menu_position = 175
+
+        elif credits_menu:
+            if event.type == pygame.KEYDOWN:
+                credits_menu = False
+                menu_position = 75
+
+            credits_y += random_speed_y
+            credits_x += random_speed_x
+            if credits_y >= 385:
+                random_speed_y = -random.uniform(0.05, 0.2)
+                credits_y = 385
+                credits_color = (randint(1, 255), randint(1, 255), randint(1, 255))
+
+            elif credits_y <= 12:
+                random_speed_y = random.uniform(0.05, 0.2)
+                credits_y = 12
+                credits_color = (randint(1, 255), randint(1, 255), randint(1, 255))
+
+            if credits_x >= 560:
+                random_speed_x = -random.uniform(0.05, 0.2)
+                credits_x = 560
+                credits_color = (randint(1, 255), randint(1, 255), randint(1, 255))
+
+            elif credits_x <= 245:
+                random_speed_x = random.uniform(0.05, 0.2)
+                credits_x = 245
+                credits_color = (randint(1, 255), randint(1, 255), randint(1, 255))
+
+
         else:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
-                    if menu_selection_pos == 75:
+                    if menu_position == 125:
                         start_time = pygame.time.get_ticks()
                         game_active = True
-                    if menu_selection_pos == 275:
+
+                    if menu_position == 175:
+                        options_menu = True
+                        menu_position = 175
+
+                    if menu_position == 225:
+                        screen.fill('black')
+                        credits_menu = True
+
+                    if menu_position == 275:
                         pygame.quit()
                         exit()
-                    if menu_selection_pos == 175:
-                        options_menu = True
-                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                    menu_selection_pos += 50
-                    if menu_selection_pos >= 275:
-                        menu_selection_pos = 275
-                    print(menu_selection_pos)
-                if event.key == pygame.K_w or event.key == pygame.K_UP:
-                    menu_selection_pos -= 50
-                    if menu_selection_pos <= 75:
-                        menu_selection_pos = 75
-                    print(menu_selection_pos)
+
+                if event.key == pygame.K_DOWN:
+                    menu_position += 50
+                    if menu_position >= 275:
+                        menu_position = 275
+
+                if event.key == pygame.K_UP:
+                    menu_position -= 50
+                    if menu_position <= 125:
+                        menu_position = 125
 
 
     if game_active:
@@ -329,32 +373,34 @@ while True:
         # Drawing
         player_group.update()
         player_group.draw(screen)
-        obstacle_group.draw(screen)
         obstacle_group.update()
-        coin_group.draw(screen)
+        obstacle_group.draw(screen)
         coin_group.update()
-        game_active = player_collisions(obstacle_group, True)
+        coin_group.draw(screen)
+        game_active = not player_collisions(obstacle_group, True)
 
     elif options_menu:
-        screen.fill('black')
-        text_render('BACK', 'white', 400, 200)
-        menu_selection(menu_selection_pos)
+        blur(30)
+        text_render('BACK', 'gray60', 400, 200)
+        menu_selection(menu_position)
+
+    elif credits_menu:
+        blur(99.99)
+        text_render('Game developed by Daniel Michalczyk', credits_color, credits_x, credits_y)
+
     else:
         speed = 10
-        text_render('START', 'white', 400, 100)
-        text_render('SKINS', 'white', 400, 150)
-        text_render('OPTIONS', 'white', 400, 200)
-        text_render('CREDITS', 'white', 400, 250)
-        text_render('QUIT', 'white', 400, 300)
-        text_render(f'score: {score}', 'white', 400, 20)
+        coin_group.empty()
+        text_render('START', 'gray60', 400, 150)
+        text_render('OPTIONS', 'gray60', 400, 200)
+        text_render('CREDITS', 'gray60', 400, 250)
+        text_render('QUIT', 'gray60', 400, 300)
+        text_render(f'SCORE: {score}', 'white', 400, 20)
         text_render(f'${money}', 'white', 400, 50)
 
         # Screen update
-        overlay = pygame.Surface((800, 400))
-        overlay.set_alpha(30)
-        overlay.fill('black')
-        screen.blit(overlay, (0, 0))
-        menu_selection(menu_selection_pos)
+        menu_selection(menu_position)
+        blur(30)
 
     pygame.display.update()
     clock.tick(60)
