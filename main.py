@@ -1,4 +1,5 @@
 import random
+
 import time
 
 import pygame
@@ -15,16 +16,26 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.animation_index = 0
         self.player_jump = pygame.image.load('Graphics/Player_jump.png').convert_alpha()
+        self.player_slide = image_scaling('Graphics/Player_slide.png', 125, 55)
         self.image = import_frames('Player_run_', 10)[0]
-        self.rect = self.image.get_rect(midbottom = (80, 300))
+        self.rect = self.image.get_rect(midbottom=(80, 300))
         self.rect.width = self.image.get_width() // 2
-        self.gravity = 2
+        self.gravity = 0
+        self.sliding_cooldown = False
+        self.sliding_time = 0
 
     def player_input(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP] and self.rect.bottom >= 300:
-            if display_score() > 5:
+        if display_score() > 5:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_UP] and self.rect.bottom >= 300:
                 self.gravity = -15
+
+            if keys[pygame.K_DOWN] and self.rect.bottom == 300:
+                if not self.sliding_cooldown:
+                    self.image = self.player_slide
+                    self.rect.y += 80
+                    self.sliding_time = pygame.time.get_ticks()
+                    self.sliding_cooldown = True
 
     def apply_gravity(self):
         self.gravity += 1
@@ -37,16 +48,28 @@ class Player(pygame.sprite.Sprite):
             self.image = self.player_jump
 
         else:
-            self.animation_index += speed / 50 # default: 50
+            self.animation_index += speed / 50  # default: 50
             if self.animation_index >= len(import_frames('Player_run_', 10)):
                 self.animation_index = 0
 
             self.image = import_frames('Player_run_', 10)[int(self.animation_index)]
+            self.rect = self.image.get_rect(midbottom=(80, 300))
+            self.rect.width = self.image.get_width() // 2
+
 
     def update(self):
-        self.player_input()
-        self.apply_gravity()
-        self.animation_state()
+        if self.sliding_cooldown:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.sliding_time > 500:
+                self.image = import_frames('Player_run_', 10)[0]
+                self.rect = self.image.get_rect(midbottom=(80, 300))
+                self.rect.width = self.image.get_width() // 2
+                self.sliding_cooldown = False
+
+        else:
+            self.apply_gravity()
+            self.animation_state()
+            self.player_input()
 
 
 class Obstacle(pygame.sprite.Sprite):
@@ -54,7 +77,7 @@ class Obstacle(pygame.sprite.Sprite):
         super().__init__()
         if type == 'bird':
             self.frames = import_frames('Enemy_bird_', 3)
-            self.y_pos = 160
+            self.y_pos = choice([160, 240])
 
         else:
             self.frames = import_frames('Enemy_boulder_', 3)
@@ -74,7 +97,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.image = self.frames[int(self.animation_index)]
 
     def destroy(self):
-        if self.rect.x < -200:
+        if self.rect.x < -300:
             self.kill()
 
     def update(self):
@@ -121,7 +144,7 @@ class Coin(pygame.sprite.Sprite):
 
 def display_score():
     current_time = int(round((pygame.time.get_ticks() - start_time) / 100))
-    score_surf = font.render(f'{current_time}', False, 'black')
+    score_surf = font.render(f'{current_time}m', False, 'black')
     score_rect = score_surf.get_rect(midleft = (10, 20))
     screen.blit(score_surf, score_rect)
     return current_time
@@ -194,18 +217,19 @@ def blur(amount):
 pygame.init()
 WIDTH = 800
 HEIGHT = 400
+FPS = 60
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Pygame Runner')
 pygame.display.set_icon(pygame.image.load('Graphics/Logo.png'))
 clock = pygame.time.Clock()
 font = pygame.font.Font('Fonts/MP16REG.ttf', 30)
-game_active = False
-options_menu = False
-credits_menu = False
 credits_x, credits_y = 245, 12
 random_speed_x = random.uniform(0.05, 0.2)
 random_speed_y = random.uniform(0.05, 0.2)
 credits_color = (randint(1, 255), randint(1, 255), randint(1, 255))
+game_active = False
+options_menu = False
+credits_menu = False
 menu_position = 125
 start_time = 0
 speed = 10
@@ -275,9 +299,9 @@ while True:
 
             if event.type == obstacle_speed:
                 speed += 0.01 # default: 0.01
-                if speed >= 35:
-                    speed = 35
-                print(speed)
+                if speed >= 20:
+                    speed = 20
+                print(round(speed, 2))
 
         elif options_menu:
             if event.type == pygame.KEYDOWN:
@@ -371,12 +395,12 @@ while True:
         text_render(f'${int(money)}', 'black', 10, 50, 'midleft')
 
         # Drawing
-        player_group.update()
-        player_group.draw(screen)
         obstacle_group.update()
         obstacle_group.draw(screen)
         coin_group.update()
         coin_group.draw(screen)
+        player_group.update()
+        player_group.draw(screen)
         game_active = not player_collisions(obstacle_group, True)
 
     elif options_menu:
@@ -395,7 +419,7 @@ while True:
         text_render('OPTIONS', 'gray60', 400, 200)
         text_render('CREDITS', 'gray60', 400, 250)
         text_render('QUIT', 'gray60', 400, 300)
-        text_render(f'SCORE: {score}', 'white', 400, 20)
+        text_render(f'{score} meters', 'white', 400, 20)
         text_render(f'${money}', 'white', 400, 50)
 
         # Screen update
@@ -403,4 +427,4 @@ while True:
         blur(30)
 
     pygame.display.update()
-    clock.tick(60)
+    clock.tick(FPS)
